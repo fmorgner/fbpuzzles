@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include "Prediction.h"
+#include "prediction.h"
 
 #define COULD_NOT_OPEN_FILE -1
 

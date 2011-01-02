@@ -1,6 +1,8 @@
 #include <vector>
-#include "Prediction.h"
+#include "prediction.h"
 #include "utility.h"
+#include <stdlib.h>
+#include <algorithm>
 
 typedef std::vector<Prediction> CPredictionVector;
 typedef std::vector<CPredictionVector::iterator> CPredictionIteratorVector;
@@ -10,6 +12,7 @@ bool startPosCompare(Prediction firstPrediction, Prediction secondPrediction)
 	return firstPrediction.getStartPosition() < secondPrediction.getStartPosition();
 	}
 
+CPredictionVector predictions;
 CPredictionIteratorVector bestCombination;
 
 int calcCombinationScore(CPredictionIteratorVector* combination)
@@ -24,20 +27,20 @@ int calcCombinationScore(CPredictionIteratorVector* combination)
 	return score;
 	}
 
-void leftCombinationElements(CPredictionIteratorVector* combination, CPredictionVector* predictions)
+void leftCombinationElements(CPredictionIteratorVector* combination)
 	{
 	CPredictionVector::iterator lastElement = *(combination->end()-1);
 	
 	bool foundCombination = false;
 	
-	for(CPredictionVector::iterator it = lastElement; it != predictions->end(); ++it)
+	for(CPredictionVector::iterator it = lastElement; it != predictions.end(); ++it)
 		{
 		if(it->getStartPosition() > lastElement->getStopPosition())
 			{
 			foundCombination = true;
 			CPredictionIteratorVector nextCombination = *combination;
 			nextCombination.push_back(it);
-			leftCombinationElements(&nextCombination, predictions);
+			leftCombinationElements(&nextCombination);
 			}
 		}
 	if(!foundCombination)
@@ -51,8 +54,9 @@ void leftCombinationElements(CPredictionIteratorVector* combination, CPrediction
 
 int main (int argc, char *argv[])
 	{
-	CPredictionVector predictions;
-	
+	if(argc != 2)
+		exit(0);
+
 	loadPredictionsFromFile(argv[1], &predictions);
 	
 	sort (predictions.begin(), predictions.end(), startPosCompare);
@@ -62,7 +66,7 @@ int main (int argc, char *argv[])
 		{
 		CPredictionIteratorVector combination;
 		combination.push_back(it);
-		leftCombinationElements(&combination, &predictions);
+		leftCombinationElements(&combination);
 		}
 	
 	printf("%i\n", calcCombinationScore(&bestCombination));	

@@ -1,5 +1,6 @@
 #include "utility.h"
 #include <math.h>
+#include <stdlib.h>
 
 int loadPredictionsFromFile(char* filePath, std::vector<Prediction>* predictions)
 	{

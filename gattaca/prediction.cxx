@@ -1,4 +1,4 @@
-#include "Prediction.h"
+#include "prediction.h"
 
 Prediction::Prediction()
 	{

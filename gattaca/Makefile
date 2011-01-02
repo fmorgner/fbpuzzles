@@ -1,5 +1,5 @@
 CC=g++
-LDFLAGS=-lstdc++
+LDFLAGS=-lstdc++ -lm
 CFLAGS=-I.
 
 all: gattaca	
@@ -13,10 +13,9 @@ main.o: main.cxx
 utility.o: utility.cxx
 	${CC} ${CFLAGS} -c utility.cxx
 
-prediction.o: Prediction.cxx
-	${CC} ${CFLAGS} -c Prediction.cxx
+prediction.o: prediction.cxx
+	${CC} ${CFLAGS} -c prediction.cxx
 
 clean:
 	rm *.o
 	rm gattaca
-
