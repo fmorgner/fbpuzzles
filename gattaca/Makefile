@@ -1,6 +1,6 @@
 CC=g++
 LDFLAGS=-lstdc++ -lm
-CFLAGS=-I.
+CFLAGS=-I. -O3
 
 all: gattaca	
 

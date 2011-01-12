@@ -1,75 +1,73 @@
-#include <vector>
 #include "prediction.h"
 #include "utility.h"
 #include <stdlib.h>
 #include <algorithm>
+#include <stdio.h>
 
-typedef std::vector<Prediction> CPredictionVector;
-typedef std::vector<CPredictionVector::iterator> CPredictionIteratorVector;
-
-bool startPosCompare(Prediction firstPrediction, Prediction secondPrediction)
+bool startStartPosCompare(Prediction firstPrediction, Prediction secondPrediction)
 	{
-	return firstPrediction.getStartPosition() < secondPrediction.getStartPosition();
+	return firstPrediction.m_nStartPosition < secondPrediction.m_nStartPosition;
 	}
 
-CPredictionVector predictions;
-CPredictionIteratorVector bestCombination;
-
-int calcCombinationScore(CPredictionIteratorVector* combination)
-	{
-	int score = 0;
-	
-	for(CPredictionIteratorVector::iterator it = combination->begin(); it != combination->end(); ++it)
-		{
-		score += (*it)->getScore();
-		}
-	
-	return score;
-	}
-
-void leftCombinationElements(CPredictionIteratorVector* combination)
-	{
-	CPredictionVector::iterator lastElement = *(combination->end()-1);
-	
-	bool foundCombination = false;
-	
-	for(CPredictionVector::iterator it = lastElement; it != predictions.end(); ++it)
-		{
-		if(it->getStartPosition() > lastElement->getStopPosition())
-			{
-			foundCombination = true;
-			CPredictionIteratorVector nextCombination = *combination;
-			nextCombination.push_back(it);
-			leftCombinationElements(&nextCombination);
-			}
-		}
-	if(!foundCombination)
-		{
-		if(calcCombinationScore(combination) > calcCombinationScore(&bestCombination))
-			{
-			bestCombination = *combination;
-			}
-		}
-	}
+CPredictionVector g_oPredictions;
 
 int main (int argc, char *argv[])
 	{
-	if(argc != 2)
-		exit(0);
+	if(argc != 2) exit(0);
 
-	loadPredictionsFromFile(argv[1], &predictions);
-	
-	sort (predictions.begin(), predictions.end(), startPosCompare);
-	
+	loadPredictionsFromFile(argv[1], g_oPredictions);
 
-	for(CPredictionVector::iterator it = predictions.begin(); it != predictions.end(); ++it)
+	sort(g_oPredictions.begin(), g_oPredictions.end(), startStartPosCompare);
+
+	// Find each g_oPredictions last overlap
+	ulong  nCurrentStopPosition;
+	size_t nFirstNonOverlap;
+	size_t count = g_oPredictions.size();
+	for (size_t n = 0; n < count; n++)
 		{
-		CPredictionIteratorVector combination;
-		combination.push_back(it);
-		leftCombinationElements(&combination);
+		Prediction& roPrediction = g_oPredictions[n];
+		nCurrentStopPosition = roPrediction.m_nStopPosition;
+		for (nFirstNonOverlap = n+1; nFirstNonOverlap < count; nFirstNonOverlap++)
+			{
+			if ( g_oPredictions[nFirstNonOverlap].m_nStartPosition > nCurrentStopPosition ) break;
+			}
+		roPrediction.m_nLastOverlapIndex = nFirstNonOverlap - 1;
 		}
-	
-	printf("%i\n", calcCombinationScore(&bestCombination));	
-	
+
+	// Find best path
+	ulong  nIntermediateScore = 0;
+	ulong  nNonOverlapScore;
+	ulong  nHighScore = 0;
+	size_t nHighestOverlapIndex = 0;
+	for (size_t i = 0; i < count; i++)
+		{
+		Prediction& roPrediction = g_oPredictions[i];
+		if ( roPrediction.m_nLastOverlapIndex > nHighestOverlapIndex )
+			{
+			nIntermediateScore = g_oPredictions[nHighestOverlapIndex].m_nScore;
+			for (size_t n = nHighestOverlapIndex + 1; n <= roPrediction.m_nLastOverlapIndex; n++)
+				{
+				g_oPredictions[n].m_nScore = nIntermediateScore;
+				}
+			nHighestOverlapIndex = roPrediction.m_nLastOverlapIndex;
+			}
+
+		nNonOverlapScore = nHighScore + roPrediction.m_nWeight;
+		if ( nNonOverlapScore > g_oPredictions[roPrediction.m_nLastOverlapIndex].m_nScore )
+			{
+			for (size_t n = roPrediction.m_nLastOverlapIndex; n <= nHighestOverlapIndex; n++)
+				{
+				Prediction& roOverlapPrediction = g_oPredictions[n];
+				if (nNonOverlapScore > roOverlapPrediction.m_nScore)
+					{
+					roOverlapPrediction.m_nScore = nNonOverlapScore;
+					}
+				}
+			}
+		nHighScore = roPrediction.m_nScore;
+		} // for (size_t i = 0; i < g_oPredictions.size(); i++)
+
+	printf("%lu\n", nHighScore);
+
 	return 0;
-	}
+  } // main( ... )
